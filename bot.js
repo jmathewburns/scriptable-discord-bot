@@ -15,8 +15,10 @@ client.on('message', message => {
     terms = content.split(' ');
     let currentCommand = terms[0];
 
+    let channel = message.channel;
+
     if (message.content === '!hello') {
-        message.channel.send('Hello, world!')
+        channel.send('Hello, world!')
     } else if (message.content.startsWith('!addfile')) {
         let command = terms[1];
         let url = terms[2];
@@ -24,10 +26,12 @@ client.on('message', message => {
         try {
             let content = downloadFile(url);
             registerFunction(content, command);
-            message.channel.send("Added command: " + command);
+            channel.send("Added command: " + command);
         } catch (e) {
-            message.channel.send(`Error: ${e.message}`);
-            console.log(`Error (${e.message}): ${content}`);
+            if (!content) {
+                content = url;
+            }
+            handleError(e, content, channel);
         }
     } else if (message.content.startsWith('!addstring')) {
         let command = terms[1];
@@ -38,18 +42,16 @@ client.on('message', message => {
             registerFunction(rawFunction, command);
             message.channel.send("Added command: " + command);
         } catch (e) {
-            message.channel.send(`Error: ${e.message}`);
-            console.log(`Error (${e.message}): ${rawFunction}`);
+            handleError(e, rawFunction, channel);
         }
     }
     
     else if (scripts[currentCommand]) {
-        console.log(scripts[currentCommand]);
         let arguments = content.substring(currentCommand.length, content.length);
         try {
             scripts[currentCommand](client, message, arguments, context);
         } catch (e) {
-            message.channel.send(`Error: ${e.message}`);
+            handleError(e, scripts[currentCommand].toSource(), channel)
         }
     }
 });
@@ -57,8 +59,6 @@ client.on('message', message => {
 function downloadFile(url) {
     let content;
     let error;
-
-    console.log(`Loading ${url} ...`)
 
     axios.get(url).then(response => {
         content = response.data
@@ -71,6 +71,11 @@ function downloadFile(url) {
     }
 
     return content;
+}
+
+function handleError(error, backendMessage, channel) {
+    channel.send(`Error: ${e.message}`);
+    console.log(`Error (${e.message}): ${backendMessage}`);
 }
 
 function registerFunction(functionCode, functionName) {
