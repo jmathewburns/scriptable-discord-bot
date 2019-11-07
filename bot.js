@@ -26,10 +26,7 @@ client.on('message', message => {
         axios.get(url).then(response => {
             console.log("Success: " + response.data)
             let code = '"use strict";return (' + response.data + ')';
-            let fun = new Function(code)();
-            console.log(code)
-            scripts[command] = fun;
-            message.reply("Added command: " + command);
+            addScriptCommand(code, command, message)
         }).catch(error => {
             console.log("Error: " + error.data);
             message.reply("Error: " + error.data)
@@ -40,11 +37,8 @@ client.on('message', message => {
         let rawFunction = content.substring(content.indexOf(terms[2]), content.length);
 
         let code = '"use strict";return (' + rawFunction + ')';
-        let fun = new Function(code)();
-        console.log(code)
 
-        scripts[command] = fun;
-        message.reply("Added command: " + command);
+        addScriptCommand(code, command, message);
     }
     
     else if (scripts[currentCommand]) {
@@ -54,3 +48,15 @@ client.on('message', message => {
 });
 
 client.login(process.env.BOT_TOKEN);
+
+function addScriptCommand(code, command, message) {
+    try {
+        let fun = new Function(code)();
+        scripts[command] = fun;
+        message.reply("Added command: " + command);
+    }
+    catch (e) {
+        message.channel.send("Error: " + e.message);
+        console.log(`Error (${e.message}): ${code}`);
+    }
+}
