@@ -101,6 +101,7 @@ function registerFunction(functionSource, functionName) {
     let strictFunctionSource = '"use strict";return (' + functionSource + ')';
     let fun = new Function(strictFunctionSource)();
     commands[functionName] = new Command(functionName, fun);
+    context[functionName] = {};
 }
 
 client.on('ready', () => {
