@@ -4,6 +4,7 @@ const axios = require('axios');
 const client = new Discord.Client();
 
 var scripts = {};
+var context = {}
 
 client.on('ready', () => {
     console.log('Bot online.');
@@ -44,7 +45,8 @@ client.on('message', message => {
     
     else if (scripts[currentCommand]) {
         console.log(scripts[currentCommand]);
-        scripts[currentCommand](client, message, content.substring(currentCommand.length, content.length));
+        let arguments = content.substring(currentCommand.length, content.length);
+        scripts[currentCommand](client, message, arguments, context);
     }
 });
 
