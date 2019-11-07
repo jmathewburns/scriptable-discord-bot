@@ -12,7 +12,7 @@ client.on('ready', () => {
 
 client.on('message', message => {
     let content = message.content;
-    terms = content.split(' ');
+    let terms = content.split(' ');
     let currentCommand = terms[0];
 
     let channel = message.channel;
@@ -20,30 +20,9 @@ client.on('message', message => {
     if (message.content === '!hello') {
         channel.send('Hello, world!')
     } else if (message.content.startsWith('!addfile')) {
-        let command = terms[1];
-        let url = terms[2];
-
-        try {
-            let content = downloadFile(url);
-            registerFunction(content, command);
-            channel.send("Added command: " + command);
-        } catch (e) {
-            if (!content) {
-                content = url;
-            }
-            handleError(e, content, channel);
-        }
+        registerFunctionFromFile(channel, terms);
     } else if (message.content.startsWith('!addstring')) {
-        let command = terms[1];
-
-        let rawFunction = content.substring(content.indexOf(terms[2]), content.length);
-
-        try {
-            registerFunction(rawFunction, command);
-            message.channel.send("Added command: " + command);
-        } catch (e) {
-            handleError(e, rawFunction, channel);
-        }
+        registerFunctionFromInlineSource(channel, content, terms);
     }
     
     else if (scripts[currentCommand]) {
@@ -55,6 +34,32 @@ client.on('message', message => {
         }
     }
 });
+
+function registerFunctionFromInlineSource(channel, messageContent, terms) {
+    let command = terms[1];
+    let rawFunction = messageContent.substring(messageContent.indexOf(terms[2]), messageContent.length);
+    try {
+        registerFunction(rawFunction, command);
+        channel.send("Added command: " + command);
+    } catch (error) {
+        handleError(error, rawFunction, channel);
+    }
+}
+
+function registerFunctionFromFile(channel, terms) {
+    let command = terms[1];
+    let url = terms[2];
+    try {
+        let fileContent = downloadFile(url);
+        registerFunction(fileContent, command);
+        channel.send("Added command: " + command);
+    } catch (error) {
+        if (!fileContent) {
+            fileContent = url;
+        }
+        handleError(error, fileContent, channel);
+    }
+}
 
 function downloadFile(url) {
     let content;
@@ -73,7 +78,7 @@ function downloadFile(url) {
     return content;
 }
 
-function handleError(error, backendMessage, channel) {
+function handleError(e, backendMessage, channel) {
     channel.send(`Error: ${e.message}`);
     console.log(`Error (${e.message}): ${backendMessage}`);
 }
