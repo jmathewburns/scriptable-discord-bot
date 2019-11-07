@@ -15,30 +15,31 @@ client.on('message', message => {
     let currentCommand = terms[0];
 
     if (message.content === '!hello') {
-        message.reply('Hello, world!')
+        message.channel.send('Hello, world!')
     } else if (message.content.startsWith('!addfile')) {
         let command = terms[1];
-
         let url = terms[2];
 
-        console.log(url);
-
-        axios.get(url).then(response => {
-            console.log("Success: " + response.data)
-            let code = '"use strict";return (' + response.data + ')';
-            addScriptCommand(code, command, message)
-        }).catch(error => {
-            console.log("Error: " + error.data);
-            message.reply("Error: " + error.data)
-        });
+        try {
+            let content = downloadFile(url);
+            registerFunction(content, command);
+            message.channel.send("Added command: " + command);
+        } catch (e) {
+            message.channel.send(`Error: ${e.message}`);
+            console.log(`Error (${e.message}): ${content}`);
+        }
     } else if (message.content.startsWith('!addstring')) {
         let command = terms[1];
 
         let rawFunction = content.substring(content.indexOf(terms[2]), content.length);
 
-        let code = '"use strict";return (' + rawFunction + ')';
-
-        addScriptCommand(code, command, message);
+        try {
+            registerFunction(rawFunction, command);
+            message.channel.send("Added command: " + command);
+        } catch (e) {
+            message.channel.send(`Error: ${e.message}`);
+            console.log(`Error (${e.message}): ${rawFunction}`);
+        }
     }
     
     else if (scripts[currentCommand]) {
@@ -47,16 +48,29 @@ client.on('message', message => {
     }
 });
 
-client.login(process.env.BOT_TOKEN);
+function downloadFile(url) {
+    let content;
+    let error;
 
-function addScriptCommand(code, command, message) {
-    try {
-        let fun = new Function(code)();
-        scripts[command] = fun;
-        message.reply("Added command: " + command);
+    console.log(`Loading ${url} ...`)
+
+    axios.get(url).then(response => {
+        content = response.data
+    }).catch(e => {
+        error = e
+    });
+
+    if (error) {
+        throw error;
     }
-    catch (e) {
-        message.channel.send("Error: " + e.message);
-        console.log(`Error (${e.message}): ${code}`);
-    }
+
+    return content;
 }
+
+function registerFunction(functionCode, functionName) {
+    let strictFunctionCode = '"use strict";return (' + functionCode + ')';
+    let fun = new Function(strictFunctionCode)();
+    scripts[functionName] = fun;
+}
+
+client.login(process.env.BOT_TOKEN);
