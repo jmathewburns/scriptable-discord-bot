@@ -17,15 +17,21 @@ client.on('message', message => {
 
     let channel = message.channel;
 
-    if (message.content === '!hello') {
+    if (content === '!hello') {
         channel.send('Hello, world!')
-    } else if (message.content.startsWith('!addfile')) {
+    } else if (content === '!commands') {
+        let response =  "!addfile\n!addstring\n!hello\n";
+
+        for (field in scripts) {
+            response += field + "\n";
+        }
+
+        channel.send(response);
+    } else if (content.startsWith('!addfile')) {
         registerFunctionFromFile(channel, terms);
-    } else if (message.content.startsWith('!addstring')) {
+    } else if (content.startsWith('!addstring')) {
         registerFunctionFromInlineSource(channel, content, terms);
-    }
-    
-    else if (scripts[currentCommand]) {
+    } else if (scripts[currentCommand]) {
         let arguments = content.substring(currentCommand.length, content.length);
         try {
             scripts[currentCommand](client, message, arguments, context);
