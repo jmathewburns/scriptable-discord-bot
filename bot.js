@@ -46,7 +46,11 @@ client.on('message', message => {
     else if (scripts[currentCommand]) {
         console.log(scripts[currentCommand]);
         let arguments = content.substring(currentCommand.length, content.length);
-        scripts[currentCommand](client, message, arguments, context);
+        try {
+            scripts[currentCommand](client, message, arguments, context);
+        } catch (e) {
+            message.channel.send(`Error: ${e.message}`);
+        }
     }
 });
 
