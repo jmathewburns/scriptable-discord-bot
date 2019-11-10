@@ -3,8 +3,7 @@ const axios = require('axios');
 
 const client = new Discord.Client();
 
-var commands = {};
-var context = {}
+var environments = {};
 
 const COMMAND_PREFIX = process.env.COMMAND_PREFIX;
 
@@ -26,51 +25,80 @@ class Command {
     }
 }
 
-var commands = {
-    "hello": new Command("hello", function(client, request, context) {
-        request.message.channel.send("Hello, world!");
-    }, "Prints 'Hello, world!'. It's that simple"), 
-    "commands": new Command("commands", function(client, request, context) {
-        let response = "";
-        for (const name in commands) {
-            let command = commands[name];
-            response += " - `" + COMMAND_PREFIX + command.name + "`";
-            if (command.description) {
-                response += ":\n\t" + command.description;
-            }
-            response += "\n";
-        }
-
-        request.message.channel.send(response);
-    }, "Prints a list of the currently registered (base and custom) commands along with a description, if any"),
-    "registerfile": new Command("registerfile", function(client, request, context) {
-        registerFunctionFromFile(request.message.channel, request.terms);
-    }, `Registers the given file as a command. Parameter 1 is the desired command name, parameter 2 is a URL to the file. File extension does not matter. \n
-    Example: \`!registerfile example https://example.org/path/to/json/function.js\``),
-    "registerinline": new Command("registerinline", function(client, request, context) {
-        registerFunctionFromInlineSource(request.message.channel, request.arguments, request.terms);
-    }, `Registers the given JavaScript function source code as a command. Parameter 1 is the desired command name, the rest of the message should be the function source,
-    not surrounded in quotes.\n
-    Example: \`!registerinline example function(client, request, context) { request.message.channel.send("Example"); }\``)
+class Environment {
+    constructor(commands, context) {
+        this.commands = commands;
+        this.context = context;
+    }
 }
 
-function registerFunctionFromInlineSource(channel, messageContent, terms) {
+
+client.on('ready', () => {
+    console.log('Bot online.');
+});
+
+client.on('message', message => {
+    if (message.content.startsWith(COMMAND_PREFIX)) {
+        let id = message.channel.guild.id.toString();
+
+        let environment = environments[id];
+        if (!environment) {
+            environment = new Environment(initialiseBaseCommands(), {});
+            environments[id] = environment;
+            console.log("Initialised environment for server: " + message.channel.guild.name);
+        }
+
+        processCommand(environment, message);
+    }
+});
+
+function initialiseBaseCommands() {
+    return {
+        "hello": new Command("hello", function (client, request, environment) {
+            request.message.channel.send("Hello, world!");
+        }, "Prints 'Hello, world!'. It's that simple"),
+        "commands": new Command("commands", function (client, request, environment) {
+            let response = "";
+            let commands = environment.commands;
+            for (const name in commands) {
+                let command = commands[name];
+                response += " - `" + COMMAND_PREFIX + command.name + "`";
+                if (command.description) {
+                    response += ":\n\t" + command.description;
+                }
+                response += "\n";
+            }
+            request.message.channel.send(response);
+        }, "Prints a list of the currently registered (base and custom) commands along with a description, if any"),
+        "registerfile": new Command("registerfile", function (client, request, environment) {
+            registerFunctionFromFile(request.message.channel, request.terms, environment);
+        }, `Registers the given file as a command. Parameter 1 is the desired command name, parameter 2 is a URL to the file. File extension does not matter. \n
+    Example: \`!registerfile example https://example.org/path/to/json/function.js\``),
+        "registerinline": new Command("registerinline", function (client, request, environment) {
+            registerFunctionFromInlineSource(request.message.channel, request.arguments, request.terms, environment);
+        }, `Registers the given JavaScript function source code as a command. Parameter 1 is the desired command name, the rest of the message should be the function source,
+    not surrounded in quotes.\n
+    Example: \`!registerinline example function(client, request, environment) { request.message.channel.send("Example"); }\``)
+    };
+}
+
+function registerFunctionFromInlineSource(channel, messageContent, terms, environment) {
     let command = terms[1];
     let rawFunction = messageContent.substring(messageContent.indexOf(terms[2]), messageContent.length);
     try {
-        registerFunction(rawFunction, command);
+        registerFunction(rawFunction, command, environment);
         channel.send("Added command: " + command);
     } catch (error) {
         handleError(error, rawFunction, channel);
     }
 }
 
-function registerFunctionFromFile(channel, terms) {
+function registerFunctionFromFile(channel, terms, environment) {
     let command = terms[1];
     let url = terms[2];
     try {
         let fileContent = downloadFile(url);
-        registerFunction(fileContent, command);
+        registerFunction(fileContent, command, environment);
         channel.send("Added command: " + COMMAND_PREFIX + command);
     } catch (error) {
         if (!fileContent) {
@@ -97,31 +125,26 @@ function downloadFile(url) {
     return content;
 }
 
-function registerFunction(functionSource, functionName) {
+function registerFunction(functionSource, functionName, environment) {
     let strictFunctionSource = '"use strict";return (' + functionSource + ')';
     let fun = new Function(strictFunctionSource)();
-    commands[functionName] = new Command(functionName, fun);
-    context[functionName] = {};
+    environment.commands[functionName] = new Command(functionName, fun);
+    environment.context[functionName] = {};
 }
 
-client.on('ready', () => {
-    console.log('Bot online.');
-});
+function processCommand(environment, message) {
+    let request = new BotRequest(message);
 
-client.on('message', message => {
-    if (message.content.startsWith(COMMAND_PREFIX)) {
-        let request = new BotRequest(message);
+    let command = environment.commands[request.commandName];
 
-        let command = commands[request.commandName];
-        if (command) {
-            try {
-                command.action(client, request, context);
-            } catch (error) {
-                handleError(error, command.action.toSource(), message.channel)
-            }
+    if (command) {
+        try {
+            command.action(client, request, environment);
+        } catch (error) {
+            handleError(error, command.action, message.channel)
         }
     }
-});
+}
 
 function handleError(e, backendMessage, channel) {
     channel.send(`Error: ${e.message}`);
