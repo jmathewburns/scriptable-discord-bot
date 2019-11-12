@@ -1,14 +1,31 @@
 {
-	"name": "scriptable-discord-bot",
-	"description": "Test",
-	"version": "0.0.1",
-	"main": "bot.js",
-	"scripts": {
-		"start": "node bot.js"
-	},
-	"dependencies": {
-		"axios": "^0.19.0",
-		"discord.js": "11.1.0",
-		"request": "2.81.0"
-	}
+  "name": "scriptable-discord-bot",
+  "description": "Discord Bot allowing the creating of custom JavaScript commands",
+  "version": "0.0.1",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "axios": "^0.19.0",
+    "discord.js": "11.1.0",
+    "request": "2.81.0"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jmathewburns/scriptable-discord-bot.git"
+  },
+  "keywords": [
+    "discord",
+    "custom",
+    "custom-command",
+    "scriptable"
+  ],
+  "author": "Jacques Burns",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jmathewburns/scriptable-discord-bot/issues"
+  },
+  "homepage": "https://github.com/jmathewburns/scriptable-discord-bot#readme"
 }
