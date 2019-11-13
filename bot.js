@@ -3,13 +3,13 @@ const axios = require('axios');
 
 const client = new Discord.Client();
 
-var environments = {};
+const environments = {};
 
 const COMMAND_PREFIX = process.env.COMMAND_PREFIX;
 
 class BotRequest {
     constructor(message) {
-        let messageContent = message.content;
+        const messageContent = message.content;
         this.terms = messageContent.split(' ');
         this.commandName = this.terms[0].substring(COMMAND_PREFIX.length);
         this.arguments = messageContent.substring(this.commandName.length).trim();
@@ -39,13 +39,13 @@ client.on('ready', () => {
 
 client.on('message', message => {
     if (message.content.startsWith(COMMAND_PREFIX)) {
-        let id = message.channel.guild.id.toString();
+        const id = message.channel.guild.id.toString();
 
         let environment = environments[id];
         if (!environment) {
             environment = new Environment(initialiseBaseCommands(), {});
             environments[id] = environment;
-            console.log("Initialised environment for server: " + message.channel.guild.name);
+            console.log('Initialised environment for server: ' + message.channel.guild.name);
         }
 
         processCommand(environment, message);
@@ -54,52 +54,57 @@ client.on('message', message => {
 
 function initialiseBaseCommands() {
     return {
-        "hello": new Command("hello", function (client, request, environment) {
-            request.message.channel.send("Hello, world!");
-        }, "Prints 'Hello, world!'. It's that simple"),
-        "commands": new Command("commands", function (client, request, environment) {
-            let response = "";
-            let commands = environment.commands;
+        'hello': new Command('hello', function(localClient, request, environment) {
+            request.message.channel.send('Hello, world!');
+        }, 'Prints \'Hello, world!\'. It\'s that simple'),
+        'commands': new Command('commands', function(localClient, request, environment) {
+            let response = '';
+            const commands = environment.commands;
             for (const name in commands) {
-                let command = commands[name];
-                response += " - `" + COMMAND_PREFIX + command.name + "`";
+                const command = commands[name];
+                response += ' - `' + COMMAND_PREFIX + command.name + '`';
                 if (command.description) {
-                    response += ":\n\t" + command.description;
+                    response += ':\n\t' + command.description;
                 }
-                response += "\n";
+                response += '\n';
             }
             request.message.channel.send(response);
-        }, "Prints a list of the currently registered (base and custom) commands along with a description, if any"),
-        "registerfile": new Command("registerfile", function (client, request, environment) {
+        }, 'Prints a list of the currently registered (base and custom) commands along with a description, if any'),
+        'registerfile': new Command('registerfile', function(_client, request, environment) {
             registerFunctionFromFile(request.message.channel, request.terms, environment);
-        }, `Registers the given file as a command. Parameter 1 is the desired command name, parameter 2 is a URL to the file. File extension does not matter. \n
-    Example: \`!registerfile example https://example.org/path/to/json/function.js\``),
-        "registerinline": new Command("registerinline", function (client, request, environment) {
+        }, `
+        Registers the given file as a command. Parameter 1 is the desired command name, parameter 2 is a URL to the file. File extension does not matter.
+        Example: \`!registerfile example https://example.org/path/to/json/function.js\`
+        `),
+        'registerinline': new Command('registerinline', function(_client, request, environment) {
             registerFunctionFromInlineSource(request.message.channel, request.arguments, request.terms, environment);
-        }, `Registers the given JavaScript function source code as a command. Parameter 1 is the desired command name, the rest of the message should be the function source,
-    not surrounded in quotes.\n
-    Example: \`!registerinline example function(client, request, environment) { request.message.channel.send("Example"); }\``)
+        }, `
+        Registers the given JavaScript function source code as a command. Parameter 1 is the desired command name, the rest of the message should be 
+        the function source, not surrounded in quotes.
+        Example: \`!registerinline example function(client, request, environment) { request.message.channel.send("Example"); }\`
+        `),
     };
 }
 
 function registerFunctionFromInlineSource(channel, messageContent, terms, environment) {
-    let command = terms[1];
-    let rawFunction = messageContent.substring(messageContent.indexOf(terms[2]), messageContent.length);
+    const command = terms[1];
+    const rawFunction = messageContent.substring(messageContent.indexOf(terms[2]), messageContent.length);
     try {
         registerFunction(rawFunction, command, environment);
-        channel.send("Added command: " + command);
+        channel.send('Added command: ' + command);
     } catch (error) {
         handleError(error, rawFunction, channel);
     }
 }
 
 function registerFunctionFromFile(channel, terms, environment) {
-    let command = terms[1];
-    let url = terms[2];
+    const command = terms[1];
+    const url = terms[2];
+    let fileContent;
     try {
-        let fileContent = downloadFile(url);
+        fileContent = downloadFile(url);
         registerFunction(fileContent, command, environment);
-        channel.send("Added command: " + COMMAND_PREFIX + command);
+        channel.send('Added command: ' + COMMAND_PREFIX + command);
     } catch (error) {
         if (!fileContent) {
             fileContent = url;
@@ -113,9 +118,9 @@ function downloadFile(url) {
     let error;
 
     axios.get(url).then(response => {
-        content = response.data
+        content = response.data;
     }).catch(e => {
-        error = e
+        error = e;
     });
 
     if (error) {
@@ -126,22 +131,22 @@ function downloadFile(url) {
 }
 
 function registerFunction(functionSource, functionName, environment) {
-    let strictFunctionSource = '"use strict";return (' + functionSource + ')';
-    let fun = new Function(strictFunctionSource)();
+    const strictFunctionSource = '"use strict";return (' + functionSource + ')';
+    const fun = new Function(strictFunctionSource)();
     environment.commands[functionName] = new Command(functionName, fun);
     environment.context[functionName] = {};
 }
 
 function processCommand(environment, message) {
-    let request = new BotRequest(message);
+    const request = new BotRequest(message);
 
-    let command = environment.commands[request.commandName];
+    const command = environment.commands[request.commandName];
 
     if (command) {
         try {
             command.action(client, request, environment);
         } catch (error) {
-            handleError(error, command.action, message.channel)
+            handleError(error, command.action, message.channel);
         }
     }
 }
