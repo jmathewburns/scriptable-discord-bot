@@ -1,7 +1,7 @@
 {
   "name": "scriptable-discord-bot",
   "description": "Discord Bot allowing the creating of custom JavaScript commands",
-  "version": "0.0.1",
+  "version": "0.3.1",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js"
@@ -18,8 +18,9 @@
   },
   "keywords": [
     "discord",
+    "bot",
     "custom",
-    "custom-command",
+    "command",
     "scriptable"
   ],
   "author": "Jacques Burns",
