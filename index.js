@@ -32,7 +32,6 @@ class Environment {
     }
 }
 
-
 client.on('ready', () => {
     console.log('Bot online.');
 });

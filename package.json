@@ -2,9 +2,9 @@
   "name": "scriptable-discord-bot",
   "description": "Discord Bot allowing the creating of custom JavaScript commands",
   "version": "0.3.1",
-  "main": "bot.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node bot.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "axios": "^0.19.0",
