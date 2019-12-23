@@ -1,5 +1,7 @@
 'use strict';
 
+const fs = require('fs');
+
 const Environment = require('./Environment');
 
 const environments = {};
@@ -9,16 +11,14 @@ class EnvironmentRepository {
         throw new Error(`The ${this.constructor.name} class may not be instantiated.`);
     }
 
-    static getEnvironment(guild, baseCommandsSupplier) {
+    static getEnvironment(guild) {
         const id = guild.id.toString();
 
         let environment = environments[id];
         if (!environment) {
-            if (!baseCommandsSupplier) {
-                throw new Error('environment does not exist and cannot be created');
-            }
-            environment = new Environment(baseCommandsSupplier(), {});
+            environment = new Environment();
             environments[id] = environment;
+            initialiseBaseCommands(environment);
             console.log('Initialised environment for server: ' + guild.name);
         }
 
@@ -26,9 +26,22 @@ class EnvironmentRepository {
     }
 
     static registerCommand(guild, command) {
-        const environment = this.getEnvironment(guild);
-        environment.commands[command.name] = command;
-        environment.context[command.name] = {};
+        registerCommand(this.getEnvironment(guild), command);
+    }
+}
+
+function registerCommand(environment, command) {
+    environment.commands[command.name] = command;
+    environment.context[command.name] = {};
+}
+
+function initialiseBaseCommands(environment) {
+    const commandFiles = fs.readdirSync('./src/commands/base').filter(file => file.endsWith('.js'));
+
+    for (const file of commandFiles) {
+        const command = require(`../commands/base/${file}`);
+        registerCommand(environment, command);
+        console.log(`Registered base command: ${command.name}`);
     }
 }
 

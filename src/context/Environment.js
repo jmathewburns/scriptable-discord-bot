@@ -1,9 +1,10 @@
 'use strict';
 
 class Environment {
-    constructor(commands, context) {
-        this.commands = commands;
-        this.context = context;
+    constructor() {
+        this.commands = {};
+        this.context = {};
+        this.prefix = process.env.COMMAND_PREFIX;
     }
 }
 
