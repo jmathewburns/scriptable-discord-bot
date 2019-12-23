@@ -1,5 +1,4 @@
 const Discord = require('discord.js');
-const Axios = require('axios');
 
 const Environment = require('./src/context/Environment');
 const Command = require('./src/commands/Command');
