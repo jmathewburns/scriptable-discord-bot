@@ -4,6 +4,7 @@ const Axios = require('axios');
 const Environment = require('./src/context/Environment');
 const Command = require('./src/commands/Command');
 const BotRequest = require('./src/commands/BotRequest');
+const Parser = require('./src/utils/Parser');
 
 const client = new Discord.Client();
 
@@ -59,21 +60,19 @@ function initialiseBaseCommands() {
 }
 
 function registerFunctionFromInlineSource(channel, messageContent, terms, environment) {
-    const command = terms[1];
-    const rawFunction = messageContent.substring(messageContent.indexOf(terms[2]), messageContent.length);
+    const newFunctionName = terms[1];
+    const newFunctionSource = messageContent.substring(messageContent.indexOf(terms[2]), messageContent.length);
     try {
-        registerFunction(rawFunction, command, environment);
-        channel.send('Added command: ' + command);
+        registerFunction(Parser.parseSource(newFunctionName, newFunctionSource), environment);
+        channel.send('Added command: ' + newFunctionName);
     } catch (error) {
-        handleError(error, rawFunction, channel);
+        handleError(error, newFunctionSource, channel);
     }
 }
 
-function registerFunction(functionSource, functionName, environment) {
-    const strictFunctionSource = '"use strict";return (' + functionSource + ')';
-    const fun = new Function(strictFunctionSource)();
-    environment.commands[functionName] = new Command(functionName, fun);
-    environment.context[functionName] = {};
+function registerFunction(command, environment) {
+    environment.commands[command.name] = command;
+    environment.context[command.name] = {};
 }
 
 function processCommand(environment, message) {
