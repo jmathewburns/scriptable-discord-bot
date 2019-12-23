@@ -1,36 +1,15 @@
 const Discord = require('discord.js');
-const axios = require('axios');
+const Axios = require('axios');
+
+const Environment = require('./src/context/Environment');
+const Command = require('./src/commands/Command');
+const BotRequest = require('./src/commands/BotRequest');
 
 const client = new Discord.Client();
 
 const environments = {};
 
 const COMMAND_PREFIX = process.env.COMMAND_PREFIX;
-
-class BotRequest {
-    constructor(message) {
-        const messageContent = message.content;
-        this.terms = messageContent.split(' ');
-        this.commandName = this.terms[0].substring(COMMAND_PREFIX.length);
-        this.arguments = messageContent.substring(this.commandName.length).trim();
-        this.message = message;
-    }
-}
-
-class Command {
-    constructor(name, action, description) {
-        this.name = name;
-        this.action = action;
-        this.description = description;
-    }
-}
-
-class Environment {
-    constructor(commands, context) {
-        this.commands = commands;
-        this.context = context;
-    }
-}
 
 client.on('ready', () => {
     console.log('Bot online.');
@@ -116,7 +95,7 @@ function downloadFile(url) {
     let content;
     let error;
 
-    axios.get(url).then(response => {
+    Axios.get(url).then(response => {
         content = response.data;
     }).catch(e => {
         error = e;
@@ -137,7 +116,7 @@ function registerFunction(functionSource, functionName, environment) {
 }
 
 function processCommand(environment, message) {
-    const request = new BotRequest(message);
+    const request = new BotRequest(COMMAND_PREFIX, message);
 
     const command = environment.commands[request.commandName];
 
