@@ -1,13 +1,11 @@
 const Discord = require('discord.js');
 
-const Environment = require('./src/context/Environment');
+const EnvironmentRepository = require('./src/context/EnvironmentRepository');
 const Command = require('./src/commands/Command');
 const BotRequest = require('./src/commands/BotRequest');
 const Parser = require('./src/utils/Parser');
 
 const client = new Discord.Client();
-
-const environments = {};
 
 const COMMAND_PREFIX = process.env.COMMAND_PREFIX;
 
@@ -17,14 +15,7 @@ client.on('ready', () => {
 
 client.on('message', message => {
     if (message.content.startsWith(COMMAND_PREFIX)) {
-        const id = message.channel.guild.id.toString();
-
-        let environment = environments[id];
-        if (!environment) {
-            environment = new Environment(initialiseBaseCommands(), {});
-            environments[id] = environment;
-            console.log('Initialised environment for server: ' + message.channel.guild.name);
-        }
+        const environment = EnvironmentRepository.getEnvironment(message.channel.guild, initialiseBaseCommands);
 
         processCommand(environment, message);
     }
@@ -49,7 +40,7 @@ function initialiseBaseCommands() {
             request.message.channel.send(response);
         }, 'Prints a list of the currently registered (base and custom) commands along with a description, if any'),
         'register': new Command('register', function(_client, request, environment) {
-            registerFunctionFromInlineSource(request.message.channel, request.arguments, request.terms, environment);
+            registerFunctionFromInlineSource(request.message.channel, request.arguments, request.terms);
         }, `
         Registers the given JavaScript function source code as a command. Parameter 1 is the desired command name, the rest of the message should be 
         the function source, not surrounded in quotes.
@@ -58,20 +49,16 @@ function initialiseBaseCommands() {
     };
 }
 
-function registerFunctionFromInlineSource(channel, messageContent, terms, environment) {
+function registerFunctionFromInlineSource(channel, messageContent, terms) {
     const newFunctionName = terms[1];
     const newFunctionSource = messageContent.substring(messageContent.indexOf(terms[2]), messageContent.length);
     try {
-        registerFunction(Parser.parseSource(newFunctionName, newFunctionSource), environment);
+        const newFunction = Parser.parseSource(newFunctionName, newFunctionSource);
+        EnvironmentRepository.registerCommand(channel.guild, newFunction);
         channel.send('Added command: ' + newFunctionName);
     } catch (error) {
         handleError(error, newFunctionSource, channel);
     }
-}
-
-function registerFunction(command, environment) {
-    environment.commands[command.name] = command;
-    environment.context[command.name] = {};
 }
 
 function processCommand(environment, message) {
