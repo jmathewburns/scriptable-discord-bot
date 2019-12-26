@@ -2,7 +2,7 @@
 
 const Discord = require('discord.js');
 
-const EnvironmentRepository = require('./src/context/EnvironmentRepository');
+const EnvironmentManager = require('./src/context/EnvironmentManager');
 const CommandExecutor = require('./src/commands/execution/CommandExecutor');
 
 const client = new Discord.Client();
@@ -12,7 +12,7 @@ client.on('ready', () => {
 });
 
 client.on('message', message => {
-    const environment = EnvironmentRepository.getEnvironment(message.channel.guild);
+    const environment = EnvironmentManager.getEnvironment(message.channel.guild);
     CommandExecutor.execute(client, environment, message);
 });
 

@@ -1,10 +1,15 @@
 'use strict';
 
 class Environment {
-    constructor() {
+    constructor(prefix) {
         this.commands = {};
         this.context = {};
-        this.prefix = process.env.COMMAND_PREFIX;
+        this.prefix = prefix;
+    }
+
+    registerCommand(command) {
+        this.commands[command.name] = command;
+        this.context[command.name] = {};
     }
 }
 

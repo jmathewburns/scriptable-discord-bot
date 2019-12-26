@@ -1,6 +1,6 @@
 'use strict';
 
-const EnvironmentRepository = require('../../context/EnvironmentRepository');
+const EnvironmentManager = require('../../context/EnvironmentManager');
 const Parser = require('../../utils/Parser');
 
 module.exports = {
@@ -16,9 +16,21 @@ module.exports = {
 };
 
 function registerFunctionFromInlineSource(channel, messageContent, terms) {
+    const newFunction = parseInlineSource(messageContent, terms);
+
+    registerFunction(channel.guild, newFunction);
+
+    channel.send('Added command: ' + newFunction.name);
+}
+
+function parseInlineSource(messageContent, terms) {
     const newFunctionName = terms[1];
     const newFunctionSource = messageContent.substring(messageContent.indexOf(terms[2]), messageContent.length);
-    const newFunction = Parser.parseSource(newFunctionName, newFunctionSource);
-    EnvironmentRepository.registerCommand(channel.guild, newFunction);
-    channel.send('Added command: ' + newFunctionName);
+    return Parser.parseSource(newFunctionName, newFunctionSource);
+}
+
+function registerFunction(guild, newFunction) {
+    const environment = EnvironmentManager.getEnvironment(guild);
+    environment.registerCommand(newFunction);
+    EnvironmentManager.saveEnvironment(guild, environment);
 }
