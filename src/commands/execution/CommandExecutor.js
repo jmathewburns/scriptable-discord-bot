@@ -26,7 +26,7 @@ class CommandExecutor {
 
 function handleError(e, backendMessage, channel) {
     channel.send(`Error: ${e.message}`);
-    console.error(`Error (${e.message}): ${backendMessage}`);
+    console.error(e);
 }
 
 module.exports = CommandExecutor;
